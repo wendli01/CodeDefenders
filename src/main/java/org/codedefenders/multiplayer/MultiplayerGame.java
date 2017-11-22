@@ -410,6 +410,15 @@ public class MultiplayerGame extends AbstractGame {
         return totalScore;
     }
 
+    public boolean isLineCovered(int lineNumber) {
+        for (Test test : getTests(true)) {
+            if (test.getLineCoverage().getLinesCovered().contains(lineNumber))
+                return true;
+        }
+        return false;
+    }
+
+
     public void notifyPlayers() {
         ArrayList<Event> events = getEvents();
 
