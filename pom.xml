@@ -2,6 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+
+	<!-- By default we use the following config.properties file -->
+
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<powermock.version>1.6.1</powermock.version>
@@ -20,7 +23,6 @@
 
 		<plugins>
 			<!-- Fails if the ${config.properties} file does not exists -->
-			<!-- NOTE: it does not check that properties have values -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-enforcer-plugin</artifactId>
@@ -87,9 +89,14 @@
 						<configuration>
 							<tasks>
 								<echo>Displaying properties value</echo>
+								<!-- <echo>[build.profile.id] ${build.profile.id}</echo> -->
 								<echo>[data.dir] ${data.dir}</echo>
 								<echo>[db.url]${db.url}</echo>
 								<echo>[tomcat.url] ${tomcat.url}</echo>
+								<echo>[cluster.mode] ${cluster.mode}</echo>
+								<echo>[cluster.reservation.name] ${cluster.reservation.name}</echo>
+								<echo>[parallelize] ${parallelize}</echo>
+								<echo>[forceLocalExecution] ${forceLocalExecution}</echo>
 							</tasks>
 						</configuration>
 					</execution>
@@ -153,6 +160,7 @@
 		<finalName>${project.artifactId}</finalName>
 	</build>
 
+
 	<profiles>
 		<!-- Solution inspired by: Taken from : https://stackoverflow.com/questions/2606572/junit-splitting-integration-test-and-unit-tests/10381662#10381662 -->
 		<profile>
@@ -180,6 +188,9 @@
 								<include>**/*.class</include>
 							</includes>
 							<excludedGroups>org.codedefenders.itests.IntegrationTest</excludedGroups>
+							<excludes>
+								<exclude>itests/**/*.*</exclude>
+							</excludes>
 						</configuration>
 					</plugin>
 				</plugins>
@@ -208,11 +219,13 @@
 								one after another. It creates the highest level of separation for the test 
 								execution, but it would probably also give you the longest execution time 
 								of all the available options. Consider it as a last resort. -->
-							<!-- Do not parallelize, just fork -->
+							<!-- Do not parallelize, but just fork a new JVM each time -->
 							<forkCount>1</forkCount>
-							<!-- Do not reuse the jvm -->
 							<reuseForks>false</reuseForks>
+							<!-- Only consider tests marked as IntegrationTest -->
 							<groups>org.codedefenders.itests.IntegrationTest</groups>
+							<!-- Do not clog the console but write to output files -->
+							<redirectTestOutputToFile>true</redirectTestOutputToFile>
 						</configuration>
 					</plugin>
 				</plugins>

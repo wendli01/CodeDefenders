@@ -2,8 +2,16 @@ package org.codedefenders.events;
 
 import org.codedefenders.Role;
 import org.codedefenders.User;
+import org.codedefenders.util.DB;
 import org.codedefenders.util.DatabaseAccess;
+import org.codedefenders.util.DatabaseValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.awt.image.DataBuffer;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.HashMap;
 
@@ -14,6 +22,8 @@ public class Event {
 
     private static final HashMap<Role, String> ROLE_COLORS =
             new HashMap<>();
+    protected static final Logger logger = LoggerFactory.getLogger(Event.class);
+
 
     static {
         ROLE_COLORS.put(Role.ATTACKER, "#FF0000");
@@ -58,20 +68,20 @@ public class Event {
     public Event(int eventId, int gameId, int playerId, String message, String
             eventType,
                  String
-            eventStatus, Timestamp timestamp){
+                         eventStatus, Timestamp timestamp) {
         this(eventId, gameId, playerId, message, EventType.valueOf(eventType),
                 EventStatus.valueOf(eventStatus), timestamp);
     }
 
     public Event(int eventId, int gameId, int playerId, String message,
                  EventType
-            eventType,
+                         eventType,
                  EventStatus
-            eventStatus, Timestamp timestamp){
+                         eventStatus, Timestamp timestamp) {
         String eString = eventType.toString();
-        if (eString.contains("ATTACKER")){
+        if (eString.contains("ATTACKER")) {
             role = Role.ATTACKER;
-        } else if (eString.contains("DEFENDER")){
+        } else if (eString.contains("DEFENDER")) {
             role = Role.DEFENDER;
         } else {
             role = Role.CREATOR;
@@ -86,16 +96,16 @@ public class Event {
         this.eventId = eventId;
     }
 
-    public void setChatMessage(String message){
+    public void setChatMessage(String message) {
         chatMessage = message;
     }
 
     public String parse(HashMap<String, String> replacements, String message,
-                        boolean emphasise){
+                        boolean emphasise) {
 
         String procMessage = message;
 
-        for (String s : replacements.keySet()){
+        for (String s : replacements.keySet()) {
             procMessage = procMessage.replace(s, replacements.get(s));
         }
 
@@ -103,56 +113,56 @@ public class Event {
             User user = getUser();
             procMessage = procMessage.replace("@event_user",
                     user != null ? user.printFriendly(ROLE_COLORS.get(role)) :
-            "<span style='color:#000000'>@Unknown</span>");
+                            "<span style='color:#000000'>@Unknown</span>");
         }
 
-        if (procMessage.contains("@chat_message")){
+        if (procMessage.contains("@chat_message")) {
             procMessage = procMessage.replace("@chat_message",
                     getChatMessage());
-        } else if (emphasise){
+        } else if (emphasise) {
             procMessage = "<span style='font-style: italic; font-weight: " +
                     "bold;'>" + procMessage +
                     "</span>";
         }
 
         if (currentUserName.length() > 0 && procMessage.contains
-                (currentUserName)){
+                (currentUserName)) {
             procMessage = procMessage.replace(currentUserName, "@You");
         }
 
         return procMessage;
     }
 
-    public String getChatMessage(){
-        if (chatMessage == null){
+    public String getChatMessage() {
+        if (chatMessage == null) {
             return "";
         }
-        if (parsedChatMessage == null){
+        if (parsedChatMessage == null) {
             parsedChatMessage = parse(new HashMap<String, String>(),
                     chatMessage, false);
         }
         return parsedChatMessage;
     }
 
-    public void parse(HashMap<String, String> replacements, boolean emphasise){
+    public void parse(HashMap<String, String> replacements, boolean emphasise) {
 
         this.parsedMessage = parse(replacements, message, emphasise);
     }
 
-    public void parse(boolean emphasise){
+    public void parse(boolean emphasise) {
         parse(new HashMap<String, String>(), emphasise);
     }
 
-    public String getParsedMessage(){
-        if (parsedMessage == null){
+    public String getParsedMessage() {
+        if (parsedMessage == null) {
             parse(true);
         }
 
         return parsedMessage;
     }
 
-    public User getUser(){
-        if (user == null){
+    public User getUser() {
+        if (user == null) {
             user = DatabaseAccess.getUser(userId);
         }
 
@@ -163,54 +173,49 @@ public class Event {
         return eventStatus;
     }
 
-    public EventType getEventType(){
+    public EventType getEventType() {
         return eventType;
     }
 
-    public void setStatus(EventStatus e){
+    public void setStatus(EventStatus e) {
         eventStatus = e;
     }
 
-    public boolean insert(){
-        String sql = String.format("INSERT INTO events " +
-                        "(Game_ID, Player_ID, Event_Type, " +
-                        "Event_Status) " +
-                        "VALUES (%d, %d, '%s', '%s') ",
-                gameId, userId,
-                eventType,
-                eventStatus);
-
-        eventId = DatabaseAccess.executeInsert(sql);
-
-        if (chatMessage != null && eventId >= 0) {
-            String sqlMessage = String.format("INSERT INTO event_chat " +
-                            "(Event_Id, Message) " +
-                            "VALUES (%d, '%s') ",
-                    eventId,
-                    chatMessage);
-
-            DatabaseAccess.executeInsert(sqlMessage);
-
+    public boolean insert() {
+        Connection conn = DB.getConnection();
+        String query = "INSERT INTO events (Game_ID, Player_ID, Event_Type, Event_Status) VALUES (?, ?, ?, ?);";
+        DatabaseValue[] valueList = new DatabaseValue[]{DB.getDBV(gameId),
+                DB.getDBV(userId),
+                DB.getDBV(eventType.toString()),
+                DB.getDBV(eventStatus.toString())};
+        PreparedStatement stmt = DB.createPreparedStatement(conn, query, valueList);
+        if (DB.executeUpdate(stmt, conn)) {
+            eventId = gameId;
+            if (chatMessage != null) {
+                query = "INSERT INTO event_chat (Event_Id, Message) VALUES (?, ?);";
+                valueList = new DatabaseValue[]{DB.getDBV(eventId),
+                        DB.getDBV(chatMessage)};
+                stmt = DB.createPreparedStatement(conn, query, valueList);
+                DB.executeUpdate(stmt, conn);
+            }
+        } else {
+            eventId = -1;
         }
         return eventId >= 0;
     }
 
 
-
-
-    public boolean update(){
-        String sql = String.format("UPDATE events SET " +
-                        "Game_ID=%d, " +
-                        "Player_ID=%d', " +
-                        "Event_Type='%s', " +
-                        "Event_Status='%s', " +
-                        "Timestamp=FROM_UNIXTIME(%d) WHERE " +
-                        "Event_ID=%d",
-                gameId, userId, eventType,
-                eventStatus, time
-                        .getTime
-                                (), eventId);
-        return DatabaseAccess.executeUpdate(sql);
+    public boolean update() {
+        Connection conn = DB.getConnection();
+        String query = "UPDATE events SET Game_ID=?, Player_ID=?, Event_Type=?, Event_Status=?, Timestamp=FROM_UNIXTIME(?) WHERE Event_ID=?";
+        DatabaseValue[] valueList = new DatabaseValue[]{DB.getDBV(gameId),
+                DB.getDBV(userId),
+                DB.getDBV(eventType.toString()),
+                DB.getDBV(eventStatus.toString()),
+                DB.getDBV((Long) time.getTime()),
+                DB.getDBV(eventId)};
+        PreparedStatement stmt = DB.createPreparedStatement(conn, query, valueList);
+        return DB.executeUpdate(stmt, conn);
     }
 
 }
