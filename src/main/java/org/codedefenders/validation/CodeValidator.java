@@ -22,36 +22,14 @@ import java.util.regex.Pattern;
  */
 public class CodeValidator {
 
-    // FIXME Temporary removed the ";"
-    public final static String[] PROHIBITED_OPERATORS = {"<<", ">>", ">>>", "?", "//", "/*"};
-    public final static String[] PROHIBITED_MODIFIER_CHANGES = {"public", "final", "protected", "private"};
+    private final static String[] PROHIBITED_OPERATORS = {"<<", ">>", ">>>", "?", ";"};
+    private final static String[] PROHIBITED_MODIFIER_CHANGES = {"public", "final", "protected", "private"};
     private static final Logger logger = LoggerFactory.getLogger(CodeValidator.class);
 
-    //
-    private static final String COMMENT_REGEX_MULTI_AND_SINGLE_LINE = "(/\\*([^*]|[\\r\\n]|(\\*+([^*/]|[\\r\\n])))*\\*+/|[\\t]*//.*)|\"(\\\\.|[^\\\\\"])*\"|'(\\\\[\\s\\S]|[^'])*'";
-
     public static boolean validMutant(String originalCode, String mutatedCode) {
-
-        // Normalize Strings
-        // Remove all the comments
-        originalCode = originalCode.replaceAll(COMMENT_REGEX_MULTI_AND_SINGLE_LINE, "");
-        mutatedCode = mutatedCode.replaceAll(COMMENT_REGEX_MULTI_AND_SINGLE_LINE, "");
-        // Remove empty lines
-        originalCode = originalCode.replaceAll("(?m)^[ \t]*\r?\n", "");
-        mutatedCode = mutatedCode.replaceAll("(?m)^[ \t]*\r?\n", "");
-
-
-        // if only literals were changed
-        if (onlyLiteralsChanged(originalCode, mutatedCode))
-            return true;
-
         // rudimentary word-level matching as dmp works on character level
-        List<DiffMatchPatch.Diff> word_changes = tokenDiff(originalCode, mutatedCode);
+        List<DiffMatchPatch.Diff> word_changes = word_diff(originalCode, mutatedCode);
         if (containsProhibitedModifierChanges(word_changes))
-            return false;
-
-        //if comments were changed in any way, mutant is invalid
-        if (containsModifiedComments(originalCode, mutatedCode))
             return false;
 
         // Runs diff match patch between the two Strings to see if there are any differences.
@@ -71,11 +49,10 @@ public class CodeValidator {
         return hasChanges;
     }
 
-    private static List<DiffMatchPatch.Diff> tokenDiff(String originalCode, String mutatedCode) {
-        List<String> tokensOrig = getTokens(new StreamTokenizer(new StringReader(originalCode)));
-        List<String> tokensMuta = getTokens(new StreamTokenizer(new StringReader(mutatedCode)));
+    private static List<DiffMatchPatch.Diff> word_diff(String orig, String mutated) {
         List<DiffMatchPatch.Diff> diffs = new ArrayList<>();
-
+        List<String> tokensOrig = getTokens(new StreamTokenizer(new StringReader(orig)));
+        List<String> tokensMuta = getTokens(new StreamTokenizer(new StringReader(mutated)));
         for (String token : tokensOrig) {
             if (Collections.frequency(tokensMuta, token) < Collections.frequency(tokensOrig, token)) {
                 diffs.add(new DiffMatchPatch.Diff(DiffMatchPatch.Operation.DELETE, token));
@@ -106,7 +83,6 @@ public class CodeValidator {
                 }
             }
         } catch (IOException e) {
-            logger.warn("Swallowing IOException", e);
         }
         return tokens;
     }
@@ -121,40 +97,6 @@ public class CodeValidator {
             }
         }
         return false;
-    }
-
-    private static Boolean containsModifiedComments(String orig, String muta) {
-        if (orig.contains("//")) {
-            String commentTokensOrig = orig.substring(orig.indexOf("//"));
-            String commentTokensMuta = muta.substring(muta.indexOf("//"));
-            if (!commentTokensMuta.equals(commentTokensOrig))
-                return true;
-        }
-        if (orig.contains("/*")) {
-            int commentTokensOrigLimit = orig.contains("*/") ? orig.indexOf("*/") : orig.length();
-            int commentTokensMutaLimit = muta.contains("*/") ? muta.indexOf("*/") : muta.length();
-
-            String commentTokensOrig = orig.substring(orig.indexOf("//"), commentTokensOrigLimit);
-            String commentTokensMuta = orig.substring(muta.indexOf("//"), commentTokensMutaLimit);
-            if (!commentTokensMuta.equals(commentTokensOrig))
-                return true;
-        }
-        return false;
-    }
-
-    private static String removeQuoted(String s, String quotationMark) {
-        while (s.contains(quotationMark)) {
-            int index_first_occ = s.indexOf(quotationMark);
-            int index_second_occ = index_first_occ + s.substring(index_first_occ + 1).indexOf(quotationMark);
-            s = s.substring(0, index_first_occ - 1) + s.substring(index_second_occ + 2);
-        }
-        return s;
-    }
-
-    private static Boolean onlyLiteralsChanged(String orig, String muta) {
-        String origWithoudStrings = removeQuoted(orig, "\"");
-        String mutaWithoutStrings = removeQuoted(muta, "\"");
-        return removeQuoted(origWithoudStrings, "\'").equals(removeQuoted(mutaWithoutStrings, "\'"));
     }
 
 
