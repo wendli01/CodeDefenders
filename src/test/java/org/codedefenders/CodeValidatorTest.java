@@ -4,8 +4,11 @@ import com.sun.org.apache.bcel.internal.classfile.Code;
 import org.codedefenders.validation.CodeValidator;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 
 import static org.codedefenders.validation.CodeValidator.validMutant;
 import static org.codedefenders.validation.CodeValidator.validTestCode;
@@ -66,6 +69,20 @@ public class CodeValidatorTest {
         assertFalse("Should be invalid; test contains system call", validTestCode(url.getPath()));
 
     }
+
+    @Test
+    public void testValidMutant() throws IOException {
+        String originalCode = new String(
+                Files.readAllBytes(
+                        new File("src/test/resources/itests/sources/Lift/Lift.java").toPath()),
+                Charset.defaultCharset());
+        String mutatedCode = new String(
+                Files.readAllBytes(
+                        new File("src/test/resources/itests/mutants/Lift/MutantLift1.java").toPath()),
+                Charset.defaultCharset());
+        assertTrue(validMutant(originalCode, mutatedCode));
+    }
+
 
     @Test
     public void testValidTest() throws IOException {

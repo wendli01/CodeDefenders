@@ -22,11 +22,24 @@ import java.util.regex.Pattern;
  */
 public class CodeValidator {
 
-    public final static String[] PROHIBITED_OPERATORS = {"<<", ">>", ">>>", "?", ";", "//", "/*"};
+    // FIXME Temporary removed the ";"
+    public final static String[] PROHIBITED_OPERATORS = {"<<", ">>", ">>>", "?", "//", "/*"};
     public final static String[] PROHIBITED_MODIFIER_CHANGES = {"public", "final", "protected", "private"};
     private static final Logger logger = LoggerFactory.getLogger(CodeValidator.class);
 
+    //
+    private static final String COMMENT_REGEX_MULTI_AND_SINGLE_LINE = "(/\\*([^*]|[\\r\\n]|(\\*+([^*/]|[\\r\\n])))*\\*+/|[\\t]*//.*)|\"(\\\\.|[^\\\\\"])*\"|'(\\\\[\\s\\S]|[^'])*'";
+
     public static boolean validMutant(String originalCode, String mutatedCode) {
+
+        // Normalize Strings
+        // Remove all the comments
+        originalCode = originalCode.replaceAll(COMMENT_REGEX_MULTI_AND_SINGLE_LINE, "");
+        mutatedCode = mutatedCode.replaceAll(COMMENT_REGEX_MULTI_AND_SINGLE_LINE, "");
+        // Remove empty lines
+        originalCode = originalCode.replaceAll("(?m)^[ \t]*\r?\n", "");
+        mutatedCode = mutatedCode.replaceAll("(?m)^[ \t]*\r?\n", "");
+
 
         // if only literals were changed
         if (onlyLiteralsChanged(originalCode, mutatedCode))
