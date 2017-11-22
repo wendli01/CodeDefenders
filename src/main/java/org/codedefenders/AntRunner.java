@@ -10,7 +10,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +19,6 @@ import javax.naming.InitialContext;
 import javax.naming.NameClassPair;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
-import javax.servlet.ServletContext;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -436,6 +434,7 @@ public class AntRunner {
         pb.redirectErrorStream(true);
 
         logger.debug("Executing Ant Command {} from directory {}", pb.command().toString(), buildFileDir);
+        System.out.println("AntRunner.runAntTarget()" + pb.command().toString() + " from  " + buildFileDir);
 
         return runAntProcess(pb);
     }

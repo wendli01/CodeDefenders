@@ -60,14 +60,14 @@
     for (Test t : tests) {
         for (Integer lc : t.getLineCoverage().getLinesCovered()) {
             if (!linesCovered.containsKey(lc)) {
-                linesCovered.put(lc, new ArrayList<>());
+                linesCovered.put(lc, new ArrayList<Test>());
             }
             linesCovered.get(lc).add(t);
         }
     }
 
 %>
-<%@ include file="/jsp/multiplayer/header_game.jsp" %>
+<%@ include file="jsp/multiplayer/header_game.jsp" %>
 <%
     messages = new ArrayList<>();
     session.setAttribute("messages", messages);
@@ -164,7 +164,7 @@
     for (Mutant m : mutantsAlive) {
         for (int line : m.getLines()){
             if (!mutantLines.containsKey(line)){
-                mutantLines.put(line, new ArrayList<>());
+                mutantLines.put(line, new ArrayList<Mutant>());
             }
 
             mutantLines.get(line).add(m);
@@ -192,27 +192,25 @@
     for (Mutant m : mutantsKilled) {
         for (int line : m.getLines()){
             if (!mutantKilledLines.containsKey(line)){
-                mutantKilledLines.put(line, new ArrayList<>());
+                mutantKilledLines.put(line, new ArrayList<Mutant>());
             }
-
             mutantKilledLines.get(line).add(m);
-
         }
     }
     //ArrayList<String> messages = new ArrayList<String>();
 %>
 
-    <%@ include file="/jsp/multiplayer/game_scoreboard.jsp" %>
+    <%@ include file="jsp/multiplayer/game_scoreboard.jsp" %>
 <div class="crow fly no-gutter up">
     <% switch (role){
         case ATTACKER:
-            %><%@ include file="/jsp/multiplayer/attacker_view.jsp" %><%
+            %><%@ include file="jsp/multiplayer/attacker_view.jsp" %><%
             break;
         case DEFENDER:
-            %><%@ include file="/jsp/multiplayer/defender_view.jsp" %><%
+            %><%@ include file="jsp/multiplayer/defender_view.jsp" %><%
             break;
         case CREATOR:
-            %><%@ include file="/jsp/multiplayer/creator_view.jsp" %><%
+            %><%@ include file="jsp/multiplayer/creator_view.jsp" %><%
             break;
         default:
             if (request.getParameter("defender") != null){
@@ -232,7 +230,7 @@
 %>
     </div>
 <script>
-<%@ include file="/jsp/multiplayer/game_highlighting.jsp" %>
+<%@ include file="jsp/multiplayer/game_highlighting.jsp" %>
 </script>
-<%@ include file="/jsp/game_notifications.jsp"%>
-<%@ include file="/jsp/multiplayer/footer_game.jsp" %>
+<%@ include file="jsp/game_notifications.jsp"%>
+<%@ include file="jsp/multiplayer/footer_game.jsp" %>

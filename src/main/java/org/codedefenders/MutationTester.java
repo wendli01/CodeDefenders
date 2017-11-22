@@ -286,7 +286,7 @@ public class MutationTester {
             }
 
             // Start all
-            for (Test test : tests) {
+            for (Test test : tasks.keySet()) {
                 if (tasks.containsKey(test)) {
                     System.out.println("MutationTester.runAllTestsOnMutant() : Scheduling Task " + test);
                     sharedExecutorService.execute(tasks.get(test));
@@ -294,7 +294,7 @@ public class MutationTester {
             }
 
             // Wait for the result
-            for (Test test : tests) {
+            for (Test test : tasks.keySet()) {
                 Future<Boolean> task = tasks.get(test);
                 System.out.println("MutationTester.runAllTestsOnMutant() Checking task " + task + ". Done: "
                         + task.isDone() + ". Cancelled: " + task.isCancelled());
