@@ -18,6 +18,8 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 /**
+ * FIXME: Maybe we split this test case into validating tests vs validating mutants?
+ *
  * @author Jose Rojas
  */
 public class CodeValidatorTest {
@@ -104,6 +106,18 @@ public class CodeValidatorTest {
                 Charset.defaultCharset());
         assertFalse(validMutant(originalCode, mutatedCode));
     }
+
+    @Test
+    public void testValidMutantInitializeString() throws IOException {
+        String originalCode = new String(
+                Files.readAllBytes(new File("src/test/resources/itests/sources/XmlElement/XmlElement.java").toPath()),
+                Charset.defaultCharset());
+        String mutatedCode = new String(
+                Files.readAllBytes(new File("src/test/resources/itests/mutants/XmlElement/MutantXmlElement1.java").toPath()),
+                Charset.defaultCharset());
+        assertTrue(validMutant(originalCode, mutatedCode));
+    }
+
 
     @Test
     public void testValidMutant() throws IOException {
