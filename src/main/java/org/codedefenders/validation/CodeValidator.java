@@ -1,21 +1,27 @@
 package org.codedefenders.validation;
 
-import com.github.javaparser.JavaParser;
-import com.github.javaparser.ParseException;
-import com.github.javaparser.TokenMgrError;
-import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.stmt.BlockStmt;
-import org.apache.commons.io.FileUtils;
-import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.StreamTokenizer;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import org.apache.commons.io.FileUtils;
+import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch;
+import org.codedefenders.exceptions.CodeValidatorException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.github.javaparser.JavaParser;
+import com.github.javaparser.ParseException;
+import com.github.javaparser.TokenMgrError;
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.stmt.BlockStmt;
 
 /**
  * @author Jose Rojas
@@ -131,13 +137,18 @@ public class CodeValidator {
 
     }
 
-    public static boolean validTestCode(String javaFile) {
-        CompilationUnit cu = getCompilationUnit(javaFile);
-        if (cu == null)
-            return false;
-        TestCodeVisitor visitor = new TestCodeVisitor();
-        visitor.visit(cu, null);
-        return visitor.isValid();
+    public static boolean validTestCode(String javaFile) throws CodeValidatorException {
+        try {
+            CompilationUnit cu = getCompilationUnit(javaFile);
+            if (cu == null)
+                return false;
+            TestCodeVisitor visitor = new TestCodeVisitor();
+            visitor.visit(cu, null);
+            return visitor.isValid();
+        } catch (Throwable e) {
+            logger.error("Problem in validating test code " + javaFile);
+            throw new CodeValidatorException("Problem in validating test code " + javaFile, e);
+        }
     }
 
     public static CompilationUnit getCompilationUnit(String javaFile) {

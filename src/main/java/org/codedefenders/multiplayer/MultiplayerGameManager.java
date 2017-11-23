@@ -1,27 +1,33 @@
 package org.codedefenders.multiplayer;
 
-import org.codedefenders.*;
-import org.codedefenders.events.Event;
-import org.codedefenders.events.EventStatus;
-import org.codedefenders.events.EventType;
-import org.codedefenders.util.DatabaseAccess;
-import org.codedefenders.validation.CodeValidator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.codedefenders.Constants.*;
+import static org.codedefenders.Mutant.Equivalence.ASSUMED_YES;
+import static org.codedefenders.Mutant.Equivalence.PROVEN_NO;
+
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.*;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
 
-import static org.codedefenders.Constants.*;
-import static org.codedefenders.Mutant.Equivalence.ASSUMED_YES;
-import static org.codedefenders.Mutant.Equivalence.PROVEN_NO;
+import org.codedefenders.GameManager;
+import org.codedefenders.GameState;
+import org.codedefenders.Mutant;
+import org.codedefenders.MutationTester;
+import org.codedefenders.TargetExecution;
+import org.codedefenders.Test;
+import org.codedefenders.events.Event;
+import org.codedefenders.events.EventStatus;
+import org.codedefenders.events.EventType;
+import org.codedefenders.exceptions.CodeValidatorException;
+import org.codedefenders.util.DatabaseAccess;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MultiplayerGameManager extends HttpServlet {
 
@@ -86,7 +92,17 @@ public class MultiplayerGameManager extends HttpServlet {
                 String testText = request.getParameter("test");
 
                 // If it can be written to file and compiled, end turn. Otherwise, dont.
-                Test newTest = GameManager.createTest(activeGame.getId(), activeGame.getClassId(), testText, uid, "mp");
+
+                Test newTest = null;
+
+                try {
+                    newTest = GameManager.createTest(activeGame.getId(), activeGame.getClassId(), testText, uid, "mp");
+                } catch (CodeValidatorException cve) {
+                    messages.add(TEST_GENERIC_ERROR_MESSAGE);
+                    session.setAttribute(SESSION_ATTRIBUTE_PREVIOUS_TEST, testText);
+                    response.sendRedirect("play");
+                    return;
+                }
 
                 if (newTest == null) {
                     messages.add(TEST_INVALID_MESSAGE);
@@ -241,7 +257,17 @@ public class MultiplayerGameManager extends HttpServlet {
                     String testText = request.getParameter("test");
 
                     // If it can be written to file and compiled, end turn. Otherwise, dont.
-                    Test newTest = GameManager.createTest(activeGame.getId(), activeGame.getClassId(), testText, uid, "mp");
+                    Test newTest = null;
+
+                    try {
+                        newTest = GameManager.createTest(activeGame.getId(), activeGame.getClassId(), testText, uid, "mp");
+                    } catch (CodeValidatorException cve) {
+                        messages.add(TEST_GENERIC_ERROR_MESSAGE);
+                        session.setAttribute(SESSION_ATTRIBUTE_PREVIOUS_TEST, testText);
+                        response.sendRedirect("play");
+                        return;
+                    }
+
                     if (newTest == null) {
                         messages.add(TEST_INVALID_MESSAGE);
                         session.setAttribute(SESSION_ATTRIBUTE_PREVIOUS_TEST, testText);

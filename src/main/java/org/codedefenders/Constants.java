@@ -72,6 +72,8 @@ public class Constants {
     public static final String LOSER_MESSAGE = "You lost!";
     public static final String DRAW_MESSAGE = "It was a draw!";
 
+    public static final String TEST_GENERIC_ERROR_MESSAGE = "Sorry ! An error on the server prevented the compilation of your test.";
+
     public static final String TEST_DID_NOT_COMPILE_MESSAGE = "Your test did not compile. Try again, but with compilable code.";
     public static final String TEST_INVALID_MESSAGE = "Your test is not valid. Remember the rules: Only one non-empty test, at most two assertions per test, no conditionals and no loops!";
     public static final String TEST_PASSED_ON_CUT_MESSAGE = "Great! Your test compiled and passed on the original class under test.";
